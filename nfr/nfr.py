@@ -273,12 +273,6 @@ class NFR:
             weighted_mean, weighted_cov = self._estimate_mvn(
                 X_train, Y_train, S_train_raw
             )
-            if self.options.get("init_p0_as_standard_normal", False):
-                self.logger.debug(
-                    "A standard normal is used as p0, which is the same as the flow's base distribution."
-                )
-                weighted_mean = torch.zeros(self.D, device=self.device)
-                weighted_cov = torch.eye(self.D, device=self.device)
 
             self.p0_info = "multivariate_normal"
             self.p0 = torch.distributions.MultivariateNormal(
@@ -611,26 +605,6 @@ class NFR:
                 iteration_values,
                 self.iteration,
             )
-            # if (
-            #     self.iteration % self.options["checkpoint_iters"] == 0
-            #     or self.is_finished
-            # ):
-            #     self.save(
-            #         os.path.join(
-            #             self.options["experiment_folder"],
-            #             "nfr.pkl",
-            #         )
-            #     )
-            #     try:
-            #         model_dir = os.path.join(
-            #             self.options["experiment_folder"], "model"
-            #         )
-            #         pathlib.Path(model_dir).mkdir(parents=True, exist_ok=True)
-            #         self.surrogate.save(
-            #             os.path.join(model_dir, f"{self.iteration}.pkl"),
-            #         )
-            #     except Exception:
-            #         pass
 
             plt.close("all")
             gc.collect()
@@ -641,7 +615,6 @@ class NFR:
                 if step >= steps:
                     break
 
-        assert self.options.get("fun_evals_per_iter") == 0
         lnZ_estimated = torch.mean(self.surrogate.lnZ)
         lnZ_estimated = lnZ_estimated.cpu().detach().numpy()
         self.surrogate.parameter_transformer = self.parameter_transformer
