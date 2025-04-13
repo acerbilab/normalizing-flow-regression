@@ -1,0 +1,14 @@
+name: nfr
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.10
+  - ipywidgets
+  - ipykernel
+  - notebook
+  - pytorch
+  - pre-commit
+  - pip
+  - pip:
+      - -r requirements.txt

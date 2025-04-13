@@ -1,0 +1,7 @@
+---
+name: multi_banana_D_${.options.D}_N_${.options.num_bananas}
+file_name: multi_banana
+classname: MultiBanana
+options:
+  D: 6
+  num_bananas: 2

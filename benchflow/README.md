@@ -1,0 +1,2 @@
+This is currently a minimal implementation for demonstration purposes, adapted from [VSBQ](https://github.com/acerbilab/vsbq).
+TODO: refactor everything and include all the algorithms and tasks properly. Make `benchflow` a standalone public package.

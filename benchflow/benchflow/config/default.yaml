@@ -1,0 +1,23 @@
+defaults:
+  - _self_
+  - task: ???
+  - algorithm: ???
+  - experiment: null
+  - launcher: joblib.yaml
+#  - submitit-slurm-options
+#  - override hydra/launcher: submitit_slurm  # requires hydra-submitit-launcher (available via pip)
+#
+#  - submitit-local-options
+#  - override hydra/launcher: submitit_local  # requires hydra-submitit-launcher (available via pip)
+metrics: [lml, lml_error, lml_sd, gskl, mtv, fun_evals, idx_best]
+eval_iter: 0
+save_options:
+  save_objects: True
+task_name: ${task.name}
+seed: 42
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${hydra.job.name}
+  callbacks:
+    log_job_return:
+      _target_: hydra.experimental.callbacks.LogJobReturnCallback

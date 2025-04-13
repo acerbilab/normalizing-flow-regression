@@ -1,0 +1,5 @@
+# @package _global_
+# requires hydra-joblib-launcher (available via pip)
+
+defaults:
+  - override /hydra/launcher: joblib

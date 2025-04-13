@@ -1,0 +1,35 @@
+class: GenerateInitialSet
+method: CMA-ES # Available methods: "Slice Sampling", "CMA-ES", "PyBADS", "Mixed Samples"
+data_save_path: ./data/initial_points/initial_train_set.pkl # pkl file path to save the generated initial points
+debugging: True # if True, record information for debugging
+transform_to_unconstrained_coordinates: False # By default False, let the algorithms deal with the bounds for the model parameters. If True, the parameters will first be transformed to unconstrained space and the algorithms will run with unconstrained parameters.
+
+# Options for a specific method "Slice Sampling"
+slice_sampling:
+  N_chains: 4
+  N_samples_per_chain: 20 # number of samples per chain one aims to get
+
+# Options for "CMA-ES" and "PyBADS"
+map_optimization:
+  original_space: True # if True, find MAP point in the original space, otherwise find MAP point in the internal transformed unconstrained space
+  tol_fun: 0.1 # tolerance of function value
+  N_fun_evals: 100 # budget of function evaluations, all budget is used for MAP optimization, it's possible that the number of initial points is less than N_fun_evals due to duplicated evaluations.
+  stop_after_first: False # if True, stop after the first MAP optimization
+
+# Options for "Mixed Samples". Serve as a testbed for the algorithm
+mixed_samples:
+  N_samples: 100 # number of samples to generate
+  fraction:
+    # prior + plausible + bound + posterior + broad_posterior = 1
+    prior: 0.2 # fraction of samples from prior
+    plausible: 0.0 # fraction of samples from plausible region
+    bound: 0.0 # fraction of samples from bound region
+    # Serve as a testbed for the algorithm by using samples from true posterior
+    posterior: 0.5 # fraction of samples from posterior
+    broad_posterior: 0.3 # fraction of samples from broadened posterior
+  broaden_posterior_settings:
+    method: t-distribution
+    diagonal: False # if True, use diagonal covariance matrix
+    isotropic: False # if True, use isotropic distribution by taking the maximum of covariance matrix's diagonal elements
+    t-distribution:
+      df: 5

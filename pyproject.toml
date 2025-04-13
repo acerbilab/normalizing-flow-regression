@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=40.6.0,<60.9.0", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 79
+extend-exclude = '\(*\.m | *\.mat | *\.html | *\.js | *\.svg | *\.pickle \)'
+
+[tool.isort]
+skip_glob = []
+line_length = 79
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+profile = "black"
+
+[tool.pycln]
+all = true
+
+[tool.ruff]
+lint.ignore = [
+    "RUF001", # ruff-specific rules ambiguous-unicode-character-string
+    "S101", # flake8-bandit assert
+    "S308", # flake8-bandit suspicious-mark-safe-usage
+    "E501", # pycodestyle line-too-long
+    "F841", # pyflakes unused-variable
+    "S301",
+    "E722",
+    "C408",
+    "S110",
+    "S102",
+    "S307",
+    "B007",
+    "UP008",
+]
+line-length = 79
+lint.select = [
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "E", # pycodestyle errors
+    "EXE", # flake8-executable
+    "F", # pyflakes
+    "I", # isort
+    "INT", # flake8-gettext
+    "PIE", # flake8-pie
+    "PLC", # pylint convention
+    "PLE", # pylint errors
+    "Q", # flake8-quotes
+    "RSE", # flake8-raise
+    "S", # flake8-bandit
+    "UP", # pyupgrade
+    "W", # pycodestyle warnings
+]

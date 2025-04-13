@@ -1,0 +1,13 @@
+class: FlowRegression
+kwargs:
+  lower_bounds: task.lb # lower bounds
+  upper_bounds: task.ub # upper bounds
+  plausible_lower_bounds: task.plb # plausible LB
+  plausible_upper_bounds: task.pub # plausible UB
+  task_name: ${task.name}
+  options:
+    annealed_target: True
+    plot: True
+
+initial_set: ./data/initial_points/${task.name}/initial_train_set_3000.pkl
+init_keep_factor: .inf # .inf: keep all initial points
