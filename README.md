@@ -1,5 +1,7 @@
 # Normalizing flow regression
 
+Bayesian inference with computationally expensive likelihood evaluations remains a significant challenge in many scientific domains. We propose normalizing flow regression (NFR), a novel offline inference method for approximating posterior distributions. Unlike traditional surrogate approaches that require additional sampling or inference steps, NFR directly yields a tractable posterior approximation through regression on existing log-density evaluations. See [our paper](https://openreview.net/pdf?id=lR0BGbw6hq) for more details.
+
 ## Set up
 
 ```bash
@@ -8,6 +10,8 @@ conda activate nfr
 # install kernel for jupyter notebook
 python -m ipykernel install --user --name nfr
 ```
+
+See `demo.ipynb` for an example of using NFR.
 
 ## Acknowledgements
 
