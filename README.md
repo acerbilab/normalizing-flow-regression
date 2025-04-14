@@ -13,6 +13,23 @@ python -m ipykernel install --user --name nfr
 
 See `demo.ipynb` for an example of using NFR.
 
+## Citation
+To appear in 7th Symposium on Advances in Approximate Bayesian Inference (AABI 2025, proceedings track).
+
+> Li, C., Huggins, B., Mikkola, P., & Acerbi, L. (2025). Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations. In 7th Symposium on Advances in Approximate Bayesian Inference.
+
+### BibTeX
+```bibtex
+@inproceedings{liNormalizingFlowRegression2025,
+  title = {Normalizing Flow Regression for {B}ayesian Inference with Offline Likelihood Evaluations},
+  booktitle = {7th Symposium on Advances in Approximate Bayesian Inference},
+  author = {Li, Chengkun and Huggins, Bobby and Mikkola, Petrus and Acerbi, Luigi},
+  year = {2025},
+  note = {To appear},
+  url = {https://approximateinference.org/2025/},
+}
+```
+
 ## Acknowledgements
 
 This repository includes code adapted from the `nflows` library: https://github.com/bayesiains/nflows, originally developed by Conor Durkan, Artur Bekasov, Iain Murray, and George Papamakarios.
