@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Normalizing Flow Regression for Bayesian Inference | NFR Project Page
+    </title>
+    <meta
+      name="description"
+      content="Project page for the paper 'Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations' by Li, Huggins, Mikkola, Acerbi (AABI 2025)"
+    />
+    <meta
+      property="og:title"
+      content="Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations"
+    />
+    <meta property="og:locale" content="en_US" />
+    <meta
+      property="og:description"
+      content="This website contains information about normalizing flow regression, a novel method for Bayesian inference that uses normalizing flows as regression models for approximating posterior distributions from existing log-density evaluations."
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+          processEscapes: true,
+          processEnvironments: true,
+        },
+        options: {
+          ignoreHtmlClass: "tex2jax_ignore",
+          processHtmlClass: "tex2jax_process",
+        },
+      };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+  </head>
+  <body>
+    <div class="header">
+      <h1>
+        Normalizing Flow Regression for Bayesian Inference with Offline
+        Likelihood Evaluations
+      </h1>
+      <div class="authors">
+        Chengkun Li<sup>1</sup>, Bobby Huggins<sup>2</sup>, Petrus
+        Mikkola<sup>1</sup>, Luigi Acerbi<sup>1</sup>
+      </div>
+      <div class="affiliations">
+        <sup>1</sup>Department of Computer Science, University of Helsinki<br />
+        <sup>2</sup>Department of Computer Science and Engineering, Washington
+        University in St. Louis
+      </div>
+      <div class="conference">
+        7th Symposium on Advances in Approximate Bayesian Inference (AABI) -
+        Proceedings track, 2025
+      </div>
+      <div class="resources">
+        <a
+          href="https://github.com/acerbilab/normalizing-flow-regression"
+          class="btn"
+          aria-label="View source code on GitHub"
+          title="View the paper codebase on GitHub"
+          ><span>Code</span></a
+        >
+        <a
+          href="https://arxiv.org/abs/2504.11554"
+          class="btn"
+          aria-label="Read paper on arXiv"
+          title="Read the paper on arXiv"
+          ><span>Paper</span></a
+        >
+        <a
+          href="https://arxiv.org/abs/2504.11554"
+          class="btn"
+          aria-label="Read social thread"
+          title="Read the paper thread"
+          ><span>Social</span></a
+        >
+        <a
+          href="https://github.com/acerbilab/normalizing-flow-regression/paper"
+          class="btn"
+          aria-label="View paper in Markdown"
+          title="Retrieve paper parts in Markdown (easy format for LLMs)"
+          ><span>Markdown</span></a
+        >
+      </div>
+    </div>
+
+    <div class="tldr">
+      <h3>TL;DR</h3>
+      <p>
+        We propose <strong>Normalizing Flow Regression (NFR)</strong>, a novel
+        offline inference method for approximating Bayesian posterior
+        distributions using existing log-density evaluations. Unlike traditional
+        surrogate approaches, NFR directly yields a tractable posterior
+        approximation through regression on existing evaluations, without
+        requiring additional sampling or inference steps. Our method performs
+        well on both synthetic benchmarks and real-world applications from
+        neuroscience and biology, offering a promising approach for Bayesian
+        inference when standard methods are computationally prohibitive.
+      </p>
+    </div>
+
+    <!-- prettier-ignore -->
+    <div class="citation">
+    @article{li2025normalizing,
+      title={Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations},
+      author={Li, Chengkun and Huggins, Bobby and Mikkola, Petrus and Acerbi, Luigi},
+      journal={7th Symposium on Advances in Approximate Bayesian Inference (AABI) - Proceedings track},
+      year={2025}
+    }
+    </div>
+
+    <h2>Introduction</h2>
+    <p>
+      Bayesian inference with computationally expensive likelihood evaluations
+      remains a significant challenge in scientific domains. When model
+      evaluations involve extensive numerical methods or simulations, standard
+      Bayesian approaches like MCMC or variational inference become impractical
+      due to their requirement for numerous density evaluations.
+    </p>
+    <p>
+      Practitioners often resort to simpler alternatives like maximum a
+      posteriori (MAP) estimation, but these point estimates fail to capture
+      parameter uncertainty. Recent surrogate modeling approaches can
+      approximate expensive density functions but typically don't directly yield
+      valid probability distributions, requiring additional sampling or
+      inference steps.
+    </p>
+
+    <div class="highlight">
+      <h3>Our Contribution</h3>
+      <p>
+        We propose <strong>Normalizing Flow Regression (NFR)</strong>, a novel
+        offline inference method that directly yields a tractable posterior
+        approximation through regression on existing log-density evaluations.
+        Unlike other surrogate methods, NFR directly produces a posterior
+        distribution that is easy to evaluate and sample from.
+      </p>
+      <p>
+        NFR efficiently recycles existing log-density evaluations (e.g., from
+        MAP optimizations) rather than requiring costly new evaluations from the
+        target model. This makes it particularly valuable in settings where
+        standard Bayesian methods are computationally prohibitive.
+      </p>
+    </div>
+    <h2>Background</h2>
+    <h3>Normalizing Flows</h3>
+    <p>
+      Normalizing flows construct flexible probability distributions by
+      transforming a simple base distribution (typically a multivariate
+      Gaussian) through an invertible transformation $T_{\boldsymbol{\phi}}:
+      \mathbb{R}^{D} \rightarrow \mathbb{R}^{D}$ with parameters
+      $\boldsymbol{\phi}$.
+    </p>
+    <p>
+      For a random variable $\mathbf{x}=T_{\boldsymbol{\phi}}(\mathbf{u})$ where
+      $\mathbf{u}$ follows base distribution $p_{\mathbf{u}}$, the change of
+      variables formula gives its density as:
+    </p>
+    $$q_{\boldsymbol{\phi}}(\mathbf{x})=p_{\mathbf{u}}(\mathbf{u})\left|\operatorname{det}
+    J_{T_{\boldsymbol{\phi}}}(\mathbf{u})\right|^{-1}, \quad
+    \mathbf{u}=T_{\boldsymbol{\phi}}^{-1}(\mathbf{x}) $$
+    <p>
+      We use masked autoregressive flow (MAF), which constructs the
+      transformation through an autoregressive process:
+    </p>
+    $$ \mathbf{x}^{(i)}=g_{\text {scale }}\left(\alpha^{(i)}\right) \cdot
+    \mathbf{u}^{(i)}+g_{\text {shift }}\left(\mu^{(i)}\right) $$
+
+    <h3>Bayesian Inference</h3>
+    <p>
+      Bayesian inference uses Bayes' theorem to determine posterior distribution
+      $p(\mathbf{x} \mid \mathcal{D})$ of parameters $\mathbf{x}$ given data
+      $\mathcal{D}$:
+    </p>
+    $$ p(\mathbf{x} \mid \mathcal{D})=\frac{p(\mathcal{D} \mid \mathbf{x})
+    p(\mathbf{x})}{p(\mathcal{D})} $$
+    <p>
+      Standard approximation approaches (VI and MCMC) require many likelihood
+      evaluations, making them impractical for expensive models. While surrogate
+      methods can approximate the target (log) density from limited evaluations,
+      they don't directly yield proper probability distributions, requiring
+      additional steps to obtain posterior samples. Our approach addresses this
+      limitation by using normalizing flows as regression models that directly
+      provide tractable posterior approximations.
+    </p>
+    <h2>Normalizing Flow Regression (NFR)</h2>
+
+    <div class="highlight">
+      <h3>Key Innovation</h3>
+      <p>
+        NFR directly yields a tractable posterior approximation through
+        regression on existing log-density evaluations, without requiring
+        additional sampling or inference steps. The flow regression model
+        provides both a normalized posterior density that's easy to evaluate and
+        sample from, and an estimate of the normalizing constant (model
+        evidence) for model comparison.
+      </p>
+    </div>
+
+    <h3>Method Overview</h3>
+    <p>
+      We use a normalizing flow with normalized density
+      $q_{\boldsymbol{\phi}}(\mathbf{x})$ to fit observations of the log density
+      of an unnormalized target posterior. The log-density prediction of our
+      regression model is:
+    </p>
+    $$ f_{\boldsymbol{\psi}}(\mathbf{x})=f_{\boldsymbol{\phi}}(\mathbf{x})+C $$
+    <p>
+      where $f_{\boldsymbol{\phi}}(\mathbf{x})=\log
+      q_{\boldsymbol{\phi}}(\mathbf{x})$ is the flow's log-density, and $C$
+      accounts for the unknown normalizing constant. We train the model via MAP
+      estimation by maximizing:
+    </p>
+    $$ \mathcal{L}(\boldsymbol{\psi}) =\sum_{n=1}^{N} \log p\left(y_{n} \mid
+    f_{\boldsymbol{\psi}}\left(\mathbf{x}_{n}\right), \sigma_{n}^{2}\right)+\log
+    p(\boldsymbol{\phi})+\log p(C) $$
+
+    <h3>Robust Likelihood Function</h3>
+    <p>
+      Standard Gaussian likelihood for log-density observations would
+      overemphasize near-zero density regions at the expense of high-density
+      regions. We address this with a Tobit likelihood that censors observations
+      below a threshold $y_{\text{low}}$:
+    </p>
+
+    <figure>
+      <img
+        src="images/tobit_likelihood.png"
+        alt="Illustration of the censoring effect of the Tobit likelihood on a target density"
+        class="responsive-img"
+      />
+      <figcaption class="caption">
+        <strong
+          >Illustration of the Tobit likelihood's censoring effect.</strong
+        >
+        The shaded region represents censored observations with log-density
+        values below $y_{\text{low}}$.
+      </figcaption>
+    </figure>
+
+    <h3>Prior Specification and Optimization</h3>
+    <p>
+      We use a multivariate Gaussian base distribution estimated from
+      high-density observations, and constrain flow transformations to stay
+      reasonably close to this base distribution setting a prior over flows.
+    </p>
+
+    <figure>
+      <img
+        src="images/flow_prior.png"
+        alt="Effect of prior variance on normalizing flow behavior"
+        class="responsive-img"
+      />
+      <figcaption class="caption">
+        <strong>Prior over flows.</strong> Example flow realizations sampled
+        from different priors over flow parameters $\phi$, using a standard
+        Gaussian as the base distribution. (a) Strong prior $\rightarrow$ too
+        rigid; (b) Intermediate prior $\rightarrow$ reasonable shapes; (c) Weak
+        prior $\rightarrow$ ill-behaved distributions.
+      </figcaption>
+    </figure>
+
+    <p>
+      We follow an annealed optimization approach which gradually fits the flow
+      to a tempered target across training iterations, providing stability.
+    </p>
+
+    <figure>
+      <img
+        src="images/annealed_optimization.png"
+        alt="Annealed optimization strategy"
+        class="responsive-img"
+      />
+      <figcaption class="caption">
+        <strong>Annealed optimization</strong> progressively fits the flow to
+        tempered observations, with inverse temperature $\beta$ increasing over
+        training iterations.
+      </figcaption>
+    </figure>
+
+    <div class="collapsible-details">
+      <button
+        class="collapsible"
+        aria-expanded="false"
+        aria-controls="flow-architecture"
+      >
+        <span class="show-text">Show Algorithm Summary</span>
+        <span class="hide-text">Hide Algorithm Summary</span>
+        <span class="collapsible-icon">▼</span>
+      </button>
+      <div class="content" aria-hidden="true">
+        <div class="arch-details-container">
+          <div class="algorithm-box">
+            <div class="algorithm-body">
+              <div class="algorithm-section">
+                <span class="algorithm-label"><strong>Input:</strong></span>
+                Observations $(\mathbf{X}, \mathbf{y},
+                \boldsymbol{\sigma}^{2})$, tempering steps $t_{\text{end}}$, max
+                iterations $T_{\max}$
+              </div>
+              <div class="algorithm-section">
+                <span class="algorithm-label"><strong>Output:</strong></span>
+                Flow $T_{\phi}$ approximating the target, log normalizing
+                constant $C$
+              </div>
+              <div class="algorithm-section algorithm-steps">
+                <ol>
+                  <li>Compute base distribution from observations</li>
+                  <li>
+                    For $t \leftarrow 0$ to $T_{\max}$ do:
+                    <ul>
+                      <li>
+                        Set inverse temperature $\beta_{t}$ according to
+                        tempering schedule
+                      </li>
+                      <li>Update tempered observations</li>
+                      <li>
+                        Optimize $C$ with fixed $\boldsymbol{\phi}$, then
+                        jointly optimize $(\boldsymbol{\phi}, C)$
+                      </li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Experiments</h2>
+    <p>
+      We evaluate our normalizing flow regression (NFR) method through a series
+      of experiments on both synthetic and real-world problems, comparing its
+      performance against established baselines.
+    </p>
+
+    <h3>Experimental Setup</h3>
+    <p>
+      For all experiments, we use log-density evaluations collected during
+      maximum a posteriori (MAP) optimization runs, reflecting real-world
+      settings where practitioners have already performed optimization to find
+      parameter point estimates. We compare NFR against three baselines:
+    </p>
+    <ul>
+      <li>
+        <strong>Laplace approximation</strong>: A Gaussian approximation using
+        the MAP estimate and numerical Hessian
+      </li>
+      <li>
+        <strong>Black-box variational inference (BBVI)</strong>: Using the same
+        flow architecture as NFR but trained through standard variational
+        inference
+      </li>
+      <li>
+        <strong>Variational sparse Bayesian quadrature (VSBQ)</strong>: A
+        state-of-the-art offline surrogate method using sparse Gaussian
+        processes
+      </li>
+    </ul>
+
+    <p>
+      We evaluate the methods using three metrics: the absolute difference
+      between true and estimated log normalizing constant (ΔLML), the mean
+      marginal total variation distance (MMTV), and the "Gaussianized"
+      symmetrized KL divergence (GsKL).
+    </p>
+
+    <h3>Results</h3>
+
+    <p>
+      We tested NFR on five benchmark problems of increasing complexity, from
+      synthetic test cases to challenging real-world applications. The
+      consolidated results demonstrate that NFR consistently outperforms
+      baseline methods across problems of varying dimensionality and complexity.
+    </p>
+
+    <div class="results-table-container">
+      <table class="consolidated-results">
+        <thead>
+          <tr>
+            <th rowspan="2">Problem (Dimension)</th>
+            <th colspan="3">Laplace</th>
+            <th colspan="3">BBVI (10×)</th>
+            <th colspan="3">VSBQ</th>
+            <th colspan="3">NFR (ours)</th>
+          </tr>
+          <tr>
+            <th>ΔLML↓</th>
+            <th>MMTV↓</th>
+            <th>GsKL↓</th>
+            <th>ΔLML↓</th>
+            <th>MMTV↓</th>
+            <th>GsKL↓</th>
+            <th>ΔLML↓</th>
+            <th>MMTV↓</th>
+            <th>GsKL↓</th>
+            <th>ΔLML↓</th>
+            <th>MMTV↓</th>
+            <th>GsKL↓</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Rosenbrock-G. (D=6)</td>
+            <td class="metric-poor">1.30</td>
+            <td class="metric-poor">0.24</td>
+            <td class="metric-poor">0.91</td>
+            <td class="metric-poor">1.00</td>
+            <td class="metric-poor">0.24</td>
+            <td class="metric-poor">0.46</td>
+            <td class="metric-good">0.20</td>
+            <td class="metric-good">0.037</td>
+            <td class="metric-good">0.018</td>
+            <td class="metric-best">0.013</td>
+            <td class="metric-best">0.028</td>
+            <td class="metric-best">0.0042</td>
+          </tr>
+          <tr>
+            <td>Lumpy (D=10)</td>
+            <td class="metric-good">0.81</td>
+            <td class="metric-good">0.15</td>
+            <td class="metric-poor">0.22</td>
+            <td class="metric-good">0.32</td>
+            <td class="metric-good">0.046</td>
+            <td class="metric-good">0.013</td>
+            <td class="metric-good">0.11</td>
+            <td class="metric-good">0.033</td>
+            <td class="metric-good">0.0070</td>
+            <td class="metric-best">0.026</td>
+            <td class="metric-best">0.022</td>
+            <td class="metric-best">0.0020</td>
+          </tr>
+          <tr>
+            <td>Timing Model (D=5)</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-good">0.32</td>
+            <td class="metric-good">0.11</td>
+            <td class="metric-good">0.13</td>
+            <td class="metric-best">0.21</td>
+            <td class="metric-best">0.044</td>
+            <td class="metric-best">0.0065</td>
+            <td class="metric-best">0.18</td>
+            <td class="metric-best">0.049</td>
+            <td class="metric-best">0.0086</td>
+          </tr>
+          <tr>
+            <td>Lotka-Volterra (D=8)</td>
+            <td class="metric-good">0.62</td>
+            <td class="metric-good">0.11</td>
+            <td class="metric-poor">0.14</td>
+            <td class="metric-good">0.24</td>
+            <td class="metric-good">0.029</td>
+            <td class="metric-good">0.0087</td>
+            <td class="metric-good">0.95</td>
+            <td class="metric-good">0.085</td>
+            <td class="metric-good">0.060</td>
+            <td class="metric-best">0.18</td>
+            <td class="metric-best">0.016</td>
+            <td class="metric-best">0.00066</td>
+          </tr>
+          <tr>
+            <td>Multisensory (D=12)</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-na">N/A</td>
+            <td class="metric-poor">4.1e+2</td>
+            <td class="metric-poor">0.87</td>
+            <td class="metric-poor">2.0e+2</td>
+            <td class="metric-good">0.82</td>
+            <td class="metric-good">0.13</td>
+            <td class="metric-good">0.11</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="results-caption">
+      <strong>Results across all benchmark problems.</strong> Lower values are
+      better for all metrics. Best results are shown in
+      <span class="metric-best-inline">dark green</span>, acceptable results in
+      <span class="metric-good-inline">light green</span>, and poor results in
+      <span class="metric-poor-inline">pink</span>. N/A indicates that the
+      method was not applicable or computationally infeasible for that problem.
+    </p>
+
+    <h3>Key Results Highlights</h3>
+
+    <div class="two-column">
+      <div>
+        <figure>
+          <img
+            src="images/rosenbrock_results.png"
+            alt="Multivariate Rosenbrock-Gaussian posterior visualizations"
+            class="responsive-img-large"
+          />
+          <figcaption class="caption">
+            Example contours of the marginal density for the
+            <strong>Multivariate Rosenbrock-Gaussian</strong> showing
+            performance of different methods. Ground-truth samples are in gray.
+          </figcaption>
+        </figure>
+      </div>
+      <div>
+        <p>
+          <strong>Synthetic Problems:</strong> On the challenging
+          Rosenbrock-Gaussian distribution (D=6) with its curved correlation
+          structure, NFR achieves substantially better performance than all
+          baselines, successfully capturing the complex posterior shape. The
+          Laplace approximation fails to capture the non-Gaussian structure,
+          while BBVI struggles with convergence issues.
+        </p>
+        <p>
+          For the mildly multimodal Lumpy distribution (D=10), NFR again shows
+          the best overall performance, though all methods except Laplace
+          perform reasonably well in this case.
+        </p>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <h3>Real-World Applications</h3>
+      <p>On real-world problems, NFR demonstrates particular strengths:</p>
+      <ul>
+        <li>
+          <strong>Bayesian Timing Model (D=5):</strong> Both NFR and VSBQ
+          accurately approximate this posterior, even with added log-likelihood
+          estimation noise that makes the problem more challenging and
+          realistic.
+        </li>
+        <li>
+          <strong>Lotka-Volterra Model (D=8):</strong> NFR significantly
+          outperforms all baselines on this problem with coupled differential
+          equations, demonstrating its effectiveness on problems with moderate
+          dimensionality and complex dynamics.
+        </li>
+        <li>
+          <strong>Multisensory Perception (D=12):</strong> In our most
+          challenging test, NFR performs remarkably well where the Laplace
+          approximation is inapplicable and BBVI is computationally prohibitive.
+          VSBQ completely fails to produce a usable approximation for this
+          high-dimensional problem.
+        </li>
+      </ul>
+    </div>
+
+    <h2>Discussion and Conclusions</h2>
+    <p>
+      We introduced normalizing flow regression (NFR), a novel offline inference
+      method that directly yields a tractable posterior approximation through
+      regression on existing log-density evaluations, unlike traditional
+      surrogate approaches that require additional sampling or inference steps.
+    </p>
+    <p>
+      Normalizing flows offer key advantages for this task: they ensure proper
+      probability distributions, enable easy sampling, scale efficiently with
+      evaluations, and flexibly incorporate prior knowledge. Our empirical
+      evaluation demonstrates that NFR effectively approximates both synthetic
+      and real-world posteriors, excelling particularly in challenging scenarios
+      where standard methods are computationally prohibitive.
+    </p>
+
+    <p>
+      In the paper's appendix, we also discuss diagnostics to detect failures of
+      the method, from simple visualizations to Pareto-smoothed importance
+      sampling.
+    </p>
+
+    <h3>Limitations and Future Work</h3>
+    <p>
+      While NFR shows promising results, it has limitations: it requires
+      sufficient coverage of probability mass regions (challenging in dimensions
+      D &gt; 15-20), depends on evaluations adequately exploring the posterior
+      landscape, and needs careful prior specification. Future research
+      directions include:
+    </p>
+    <ul>
+      <li>
+        Incorporating additional likelihood evaluation sources beyond MAP
+        optimization
+      </li>
+      <li>
+        Developing active learning strategies for sequential evaluation
+        acquisition
+      </li>
+      <li>
+        Exploring advanced flow architectures for higher-dimensional problems
+      </li>
+    </ul>
+    <p>
+      NFR represents a promising approach for Bayesian inference in
+      computationally intensive settings, offering robust, uncertainty-aware
+      modeling across scientific applications.
+    </p>
+
+    <blockquote>
+      <p>
+        <strong>Acknowledgments:</strong> This work was supported by Research
+        Council of Finland (grants 358980 and 356498), and by the Flagship
+        programme:
+        <a href="https://fcai.fi/"
+          >Finnish Center for Artificial Intelligence FCAI</a
+        >. The authors wish to thank the Finnish Computing Competence
+        Infrastructure (FCCI) for supporting this project with computational and
+        data storage resources.
+      </p>
+    </blockquote>
+
+    <h2>References</h2>
+    <ol>
+      <li>
+        Acerbi, L. (2018). Variational Bayesian Monte Carlo.
+        <em>Advances in Neural Information Processing Systems</em>,
+        31:8222-8232.
+      </li>
+      <li>
+        Acerbi, L. (2020). Variational Bayesian Monte Carlo with noisy
+        likelihoods. <em>Advances in Neural Information Processing Systems</em>,
+        33:8211-8222.
+      </li>
+      <li>
+        Blei, D.M., Kucukelbir, A., and McAuliffe, J.D. (2017). Variational
+        inference: A review for statisticians.
+        <em>Journal of the American Statistical Association</em>,
+        112(518):859-877.
+      </li>
+      <li>
+        Dinh, L., Sohl-Dickstein, J., and Bengio, S. (2017). Density estimation
+        using Real NVP.
+        <em>International Conference on Learning Representations</em>.
+      </li>
+      <li>
+        Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., and
+        Rubin, D.B. (2013). <em>Bayesian Data Analysis</em> (3rd edition). CRC
+        Press.
+      </li>
+      <li>
+        Li, C., Clarté, G., Jørgensen, M., and Acerbi, L. (2024). Fast
+        post-process Bayesian inference with variational sparse Bayesian
+        quadrature. <em>arXiv preprint</em> arXiv:2303.05263.
+      </li>
+      <li>
+        Papamakarios, G., Pavlakou, T., and Murray, I. (2017). Masked
+        autoregressive flow for density estimation.
+        <em>Advances in Neural Information Processing Systems</em>, 30.
+      </li>
+      <li>
+        Papamakarios, G., Nalisnick, E., Rezende, D.J., Mohamed, S., and
+        Lakshminarayanan, B. (2021). Normalizing flows for probabilistic
+        modeling and inference. <em>Journal of Machine Learning Research</em>,
+        22(57):1-64.
+      </li>
+      <li>
+        Ranganath, R., Gerrish, S., and Blei, D. (2014). Black box variational
+        inference. <em>Artificial Intelligence and Statistics</em>, 814-822.
+      </li>
+      <li>
+        Rezende, D.J. and Mohamed, S. (2015). Variational inference with
+        normalizing flows.
+        <em
+          >Proceedings of the 32nd International Conference on Machine
+          Learning</em
+        >, 1530-1538.
+      </li>
+    </ol>
+    <footer>
+      <p>© 2025 Chengkun Li, Bobby Huggins, Petrus Mikkola, Luigi Acerbi</p>
+      <p>
+        Find more information at:
+        <a href="https://github.com/acerbilab">https://github.com/acerbilab</a>
+      </p>
+    </footer>
+    <!-- Back to top button -->
+    <a href="#" id="back-to-top" class="back-to-top" aria-label="Back to top">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </a>
+
+    <!-- Lightbox container -->
+    <div id="lightbox" class="lightbox" aria-hidden="true">
+      <div class="lightbox-close" aria-label="Close lightbox">×</div>
+      <img class="lightbox-content" id="lightbox-img" src="" alt="" />
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="scripts.js"></script>
+  </body>
+</html>
