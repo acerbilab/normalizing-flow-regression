@@ -1,6 +1,13 @@
-# Normalizing flow regression
+# Normalizing Flow Regression
 
-Bayesian inference with computationally expensive likelihood evaluations remains a significant challenge in many scientific domains. We propose normalizing flow regression (NFR), a novel offline inference method for approximating posterior distributions. Unlike traditional surrogate approaches that require additional sampling or inference steps, NFR directly yields a tractable posterior approximation through regression on existing log-density evaluations. See [our paper](https://arxiv.org/abs/2504.11554) for more details.
+This repository provide the implementation and code used in the AABI 2025 proceedings article *Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations* (Li et al., 2025).
+
+- See the paper [web page](https://acerbilab.github.io/normalizing-flow-regression/) for more information.
+- The full paper is available [on arXiv](https://arxiv.org/abs/2504.11554) and as [Markdown files](https://github.com/acerbilab/normalizing-flow-regression/tree/main/docs/paper).
+
+## Overview
+
+Bayesian inference with computationally expensive likelihood evaluations remains a significant challenge in many scientific domains. We propose normalizing flow regression (NFR), a novel offline inference method for approximating posterior distributions. Unlike traditional surrogate approaches that require additional sampling or inference steps, NFR directly yields a tractable posterior approximation through regression on existing log-density evaluations. 
 
 ## Set up
 
