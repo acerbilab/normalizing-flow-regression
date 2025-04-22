@@ -1,6 +1,6 @@
 # Normalizing Flow Regression
 
-This repository provide the implementation and code used in the AABI 2025 (proceedings track) article *Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations* (Li et al., 2025).
+This repository provides the implementation and code used in the AABI 2025 (proceedings track) article *Normalizing Flow Regression for Bayesian Inference with Offline Likelihood Evaluations* (Li et al., 2025).
 
 - See the paper [web page](https://acerbilab.github.io/normalizing-flow-regression/) for more information.
 - The full paper is available [on arXiv](https://arxiv.org/abs/2504.11554) and as [Markdown files](https://github.com/acerbilab/normalizing-flow-regression/tree/main/docs/paper).
